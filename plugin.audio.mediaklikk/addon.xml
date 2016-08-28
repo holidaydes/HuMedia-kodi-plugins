@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.audio.mediaklikk"
+version="0.0.1"
+name="Mediaklikk radio"
+provider-name="holiday">
+<requires>
+  <import addon="xbmc.python" version="2.24.0"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>audio</provides>
+</extension>
+<extension point="xbmc.addon.metadata">
+  <summary lang="en">Mediaklikk radio</summary>
+  <description lang="en">Hungarian radio channels</description>
+  <disclaimer lang="en">Provided by http://www.mediaklikk.hu.</disclaimer>
+</extension>
+</addon>
