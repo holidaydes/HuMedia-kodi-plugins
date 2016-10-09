@@ -53,7 +53,13 @@ CHANNELS = [
 
 ]
 
-RESOLUTIONS = ['720p', '480p', '360p', '270p', '180p']
+RESOLUTIONS = [
+	'720p', '480p', '360p', '270p', '180p'
+]
+
+M3U = [
+	'VID_1280x720_HUN', 'VID_854x480_HUN', 'VID_640x360_HUN', 'VID_480x270_HUN', 'VID_320x180_HUN'
+]
 
 RESULTS = []
 
@@ -104,7 +110,7 @@ def play_video(path):
 def get_path(path):
     dialog = xbmcgui.Dialog()
     selected = dialog.select('Select resolution', RESOLUTIONS)
-    realPath = path + '0' + str(selected + 1) + '.m3u8'
+    realPath = path + M3U[selected] + '.m3u8'
 
     return realPath
 
