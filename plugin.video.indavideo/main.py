@@ -45,69 +45,69 @@ class VideoItem:
         self.link = link
 
 
-def getDuration(element):
+def get_duration(element):
     for e in element.find_all('div'):
         if 'duration' in e.get('class'):
             return e.string
     return None
 
 
-def getUploader(element):
+def get_uploader(element):
     for e in element.find_all('a'):
         if 'username' in e.get('class'):
             return e.string
     return None
 
 
-def getTitle(element):
+def get_title(element):
     return element.input.get('value')
 
 
-def getThumb(element):
+def get_thumb(element):
     for e in element.find_all('div'):
         if 'myvideos_tmb' in e.get('class'):
             temp = e.get("style")
-            beginIndex = temp.find('(')
-            endIndex = temp.find(')')
-            return temp[beginIndex + 1: endIndex]
+            begin_index = temp.find('(')
+            end_index = temp.find(')')
+            return temp[begin_index + 1: end_index]
     return None
 
 
-def getBrowseToken():
+def get_browse_token():
     response = urllib2.urlopen(BROWSE_TOKEN_URL)
     temp = response.geturl()
-    beginIndex = temp.find('=')
-    endIndex = len(temp)
-    return temp[beginIndex + 1: endIndex]
+    begin_index = temp.find('=')
+    end_index = len(temp)
+    return temp[begin_index + 1: end_index]
 
 
-def getLastPage(element):
+def get_last_page(element):
     for e in element.find_all('div'):
         if e.get('class') != None:
             if 'btn_last' in e.get('class'):
                 temp = e.div.get("onclick")
-                beginIndex = temp.find("','")
-                endIndex = temp.find("');")
-                return temp[beginIndex + 3: endIndex]
+                begin_index = temp.find("','")
+                end_index = temp.find("');")
+                return temp[begin_index + 3: end_index]
     return None
 
 
-def getVideoHash(videoName):
-    response = urllib2.urlopen(BASE_HASH_URL + videoName)
+def get_video_hash(video_name):
+    response = urllib2.urlopen(BASE_HASH_URL + video_name)
     html = response.read()
     element = BeautifulSoup(html, 'html.parser')
     temp = element.iframe.get("src")
-    beginIndex = temp.find("/new/")
-    endIndex = temp.find("?autostart")
-    return temp[beginIndex + 5: endIndex]
+    begin_index = temp.find("/new/")
+    end_index = temp.find("?autostart")
+    return temp[begin_index + 5: end_index]
 
 
-def getVideoItemList(videoHash, videoName):
+def get_video_item_list(video_hash, video_name):
     response = urllib2.urlopen(
-        BASE_VIDEO_URL + videoHash + COMMON_PART + videoName)
+        BASE_VIDEO_URL + video_hash + COMMON_PART + video_name)
     resp = json.loads(response.read())
 
-    videoItemList = []
+    video_item_list = []
 
     token_360 = resp["data"]["filesh"]["360"]
     token_720 = None
@@ -125,104 +125,94 @@ def getVideoItemList(videoHash, videoName):
     except IndexError:
         print "There is no 720 url"
 
-    obj360p = VideoItem('360p', url_360 + "&token=" + token_360)
-    videoItemList.append(obj360p)
+    obj_360p = VideoItem('360p', url_360 + "&token=" + token_360)
+    video_item_list.append(obj_360p)
 
     if token_720 != None and url_720 != None:
-        obj720p = VideoItem('720p', url_720 + '&token=' + token_720)
-        videoItemList.append(obj720p)
+        obj_720p = VideoItem('720p', url_720 + '&token=' + token_720)
+        video_item_list.append(obj_720p)
 
-    return videoItemList
+    return video_item_list
 
 
-def play_video(videoName):
-    videoItemList = getVideoItemList(getVideoHash(videoName), videoName)
+def get_list_item(title, thumb, is_folder):
+    list_item = xbmcgui.ListItem(label=title)
+    if is_folder == False:
+        list_item.setInfo('video', {'title': title, 'genre': 'none'})
+    list_item.setArt({'thumb': thumb, 'icon': '', 'fanart': ''})
+    list_item.setProperty('IsPlayable', 'false')
+    return list_item
+
+def play_video(video_name):
+    video_item_list = get_video_item_list(get_video_hash(video_name), video_name)
     names = []
-    for videoItem in videoItemList:
-        names.append(videoItem.resolution)
+    for video_item in video_item_list:
+        names.append(video_item.resolution)
 
     if (names.__len__ > 1):
         dialog = xbmcgui.Dialog()
         selected = dialog.select('Resolution', names)
-        xbmc.Player().play(videoItemList[selected].link)
+        xbmc.Player().play(video_item_list[selected].link)
     else:
-        xbmc.Player().play(videoItemList[0].link)
+        xbmc.Player().play(video_item_list[0].link)
 
 
-def list_videos(currentUrl, currentCategory, currentPage):
+def list_videos(current_url, current_category, current_page):
     url = None
     navParam = None
-    if currentCategory == 'browse':
-        navParam = '#p_date=' + currentPage + '&isAJAXrequest=1&tabToShow=TAB_0&'
-    elif currentCategory == 'search':
-        navParam = '#p_uni='
-        list_item = xbmcgui.ListItem(label='Search')
-        list_item.setArt({'thumb': 'none', 'icon': '', 'fanart': ''})
-        list_item.setProperty('IsPlayable', 'false')
+    listing = []
+    if current_category == 'browse':
+        navParam = '#p_date=' + current_page + '&isAJAXrequest=1&tabToShow=TAB_0&'
+    elif current_category == 'search':
+        navParam = '#p_uni=' + current_page
         url = '{0}?action=open&categoryName={1}'.format(_url, 'search')
         is_folder = True
-        listing.append((url, list_item, is_folder))
+        listing.append((url, get_list_item('Search', 'none', is_folder), is_folder))
 
-    if int(currentPage) != 1:
-        url = currentUrl + navParam
+    if int(current_page) != 1:
+        url = current_url + navParam
     else:
-        url = currentUrl
+        url = current_url
 
-    #xbmc.log(msg='url is null', level=xbmc.LOGNOTICE)
+    xbmc.log(msg='url=' + url, level=xbmc.LOGNOTICE)
 
     response = urllib2.urlopen(url)
     html = response.read()
     parsed = BeautifulSoup(html, 'html.parser')
-    currentLastPage = getLastPage(parsed)
-    menuItemList = []
+    current_last_page = get_last_page(parsed)
+    menu_item_list = []
 
     for link in parsed.find_all('div'):
         if (link.get('class') != None):
             if ("item_inner" in link.get('class')):
-                obj = MenuItem(getTitle(link), getThumb(link),
-                               getDuration(link), getUploader(link))
-                menuItemList.append(obj)
+                obj = MenuItem(get_title(link), get_thumb(link),
+                               get_duration(link), get_uploader(link))
+                menu_item_list.append(obj)
 
-    listing = []
-
-    list_item = xbmcgui.ListItem(label='Back to main menu')
-    list_item.setArt({'thumb': 'none', 'icon': '', 'fanart': ''})
-    list_item.setProperty('IsPlayable', 'false')
     url = '{0}'.format(_url)
     is_folder = True
-    listing.append((url, list_item, is_folder))
+    listing.append((url, get_list_item('Back to main menu', 'none', is_folder), is_folder))
 
-    if currentLastPage != None:
-        if currentLastPage > 1 and int(currentPage) != currentLastPage:
+    if current_last_page != None:
+        if current_last_page > 1 and int(current_page) != current_last_page:
             label = 'Next page ' + \
-                str(int(currentPage) + 1) + '/' + str(currentLastPage)
-            list_item = xbmcgui.ListItem(label=label)
-            list_item.setArt({'thumb': 'none', 'icon': '', 'fanart': ''})
-            list_item.setProperty('IsPlayable', 'false')
+                str(int(current_page) + 1) + '/' + str(current_last_page)
             url = '{0}?action=nav&url={1}&category={2}&page={3}'.format(
-                _url, currentUrl, currentCategory, str(int(currentPage) + 1))
+                _url, current_url, current_category, str(int(current_page) + 1))
             is_folder = True
-            listing.append((url, list_item, is_folder))
-        if currentLastPage > 1 and int(currentPage) > 1:
+            listing.append((url, get_list_item(label, 'none', is_folder), is_folder))
+        if current_last_page > 1 and int(current_page) > 1:
             label = 'Prev page ' + \
-                str(int(currentPage) - 1) + '/' + str(currentLastPage)
-            list_item = xbmcgui.ListItem(label=label)
-            list_item.setArt({'thumb': 'none', 'icon': '', 'fanart': ''})
-            list_item.setProperty('IsPlayable', 'false')
+                str(int(current_page) - 1) + '/' + str(current_last_page)
             url = '{0}?action=nav&url={1}&category={2}&page={3}'.format(
-                _url, currentUrl, currentCategory, str(int(currentPage) - 1))
+                _url, current_url, current_category, str(int(current_page) - 1))
             is_folder = True
-            listing.append((url, list_item, is_folder))
+            listing.append((url, get_list_item(label, 'none', is_folder), is_folder))
 
-    for menuItem in menuItemList:
-        list_item = xbmcgui.ListItem(label=menuItem.title)
-        list_item.setInfo('video', {'title': menuItem.title, 'genre': 'none'})
-        list_item.setArt(
-            {'thumb': "http:" + menuItem.thumb, 'icon': '', 'fanart': ''})
-        list_item.setProperty('IsPlayable', 'false')
-        url = '{0}?action=play&videoName={1}'.format(_url, menuItem.title)
+    for menu_item in menu_item_list:
+        url = '{0}?action=play&videoName={1}'.format(_url, menu_item.title)
         is_folder = False
-        listing.append((url, list_item, is_folder))
+        listing.append((url, get_list_item(menu_item.title, 'http:' + menu_item.thumb, is_folder), is_folder))
 
     xbmcplugin.addDirectoryItems(_handle, listing, len(listing))
     xbmcplugin.addSortMethod(_handle, xbmcplugin.SORT_METHOD_NONE)
@@ -233,13 +223,10 @@ def list_categories():
     listing = []
 
     for category in CATEGORIES:
-        list_item = xbmcgui.ListItem(label=category['name'])
-        list_item.setArt({'thumb': '', 'icon': '', 'fanart': ''})
-        list_item.setProperty('IsPlayable', 'false')
         url = '{0}?action=open&categoryName={1}'.format(
             _url, category['value'])
         is_folder = True
-        listing.append((url, list_item, is_folder))
+        listing.append((url, get_list_item(category['name'], 'none', is_folder), is_folder))
 
     xbmcplugin.addDirectoryItems(_handle, listing, len(listing))
     xbmcplugin.addSortMethod(_handle, xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE)
@@ -247,22 +234,22 @@ def list_categories():
 
 
 def browse():
-    currentUrl = BASE_URL + 'browse?token=' + getBrowseToken()
-    currentCategory = 'browse'
-    currentPage = '1'
-    list_videos(currentUrl, currentCategory, currentPage)
+    current_url = BASE_URL + 'browse?token=' + get_browse_token()
+    current_category = 'browse'
+    current_page = '1'
+    list_videos(current_url, current_category, current_page)
 
 
 def search():
-    currentSearchText = _get_keyboard(heading="Enter the query")
+    currentSearchText = get_keyboard(heading="Enter the query")
     # if ( not currentSearchText ): return False, 0
-    currentUrl= BASE_URL + 'search/text/' + currentSearchText.encode("utf-8") + '?channel_constraint=undefined'
-    currentCategory = 'search'
-    currentPage = '1'
-    list_videos(currentUrl, currentCategory, currentPage)
+    current_url= BASE_URL + 'search/text/' + currentSearchText.encode("utf-8") + '?channel_constraint=undefined'
+    current_category = 'search'
+    current_page = '1'
+    list_videos(current_url, current_category, current_page)
 
 
-def _get_keyboard( default="", heading="", hidden=False ):
+def get_keyboard( default="", heading="", hidden=False ):
     keyboard = xbmc.Keyboard( default, heading, hidden )
     keyboard.doModal()
     if ( keyboard.isConfirmed() ):
