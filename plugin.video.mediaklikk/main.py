@@ -18,7 +18,7 @@ PLUGIN_ID = 'plugin.video.mediaklikk'
 LOGO_URL = 'special://home/addons/{0}/resources/logo/'.format(PLUGIN_ID)
 
 BASEURL = 'http://player.mediaklikk.hu/player/player-inside-full3.php?userid=mtva&streamid='
-BASEURL_END = '&flashmajor=22&flashminor=0'
+BASEURL_END = '&noflash=yes'
 CHANNELS = [
     {
         'key': 'mtv1live',
@@ -72,9 +72,9 @@ def generate_urls():
     for channel in CHANNELS:
         response = urllib2.urlopen(BASEURL + channel['key'] + BASEURL_END)
         html = response.read()
-        begin = html.index('http://c')
+        begin = html.index('http:\/\/c')
         end = html.index('index.m3u8')
-        url = html[begin:end]
+        url = html[begin:end].replace('\/', '/')
 
         RESULTS.append(url)
 
