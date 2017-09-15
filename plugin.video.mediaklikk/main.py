@@ -72,7 +72,7 @@ def generate_urls():
     for channel in CHANNELS:
         response = urllib2.urlopen(BASEURL + channel['key'] + BASEURL_END)
         html = response.read()
-        begin = html.index('http:\/\/c')
+        begin = html.index('https:\/\/c')
         end = html.index('index.m3u8')
         url = html[begin:end].replace('\/', '/')
 
